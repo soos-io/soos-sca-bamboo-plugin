@@ -1,4 +1,4 @@
-package io.soos;
+package io.soos.domain;
 
 public enum Mode {
     RUN_AND_WAIT("Run and wait","run_and_wait"),

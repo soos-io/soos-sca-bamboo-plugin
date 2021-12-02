@@ -4,34 +4,34 @@ import com.atlassian.bamboo.collections.ActionParametersMap;
 import com.atlassian.bamboo.task.AbstractTaskConfigurator;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
+import io.soos.commons.PluginConstants;
+import io.soos.domain.Mode;
+import io.soos.domain.OnFailure;
+import io.soos.domain.OperatingEnvironment;
 import io.soos.integration.commons.Constants;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
+
     private final Validation validation = new Validation();
+
     @NotNull
     @Override
     public Map<String, String> generateTaskConfigMap(@NotNull final ActionParametersMap params, @Nullable final TaskDefinition previousTaskDefinition)
     {
         final Map<String, String> config = super.generateTaskConfigMap(params, previousTaskDefinition);
 
-        config.put(Constants.MAP_PARAM_PROJECT_NAME_KEY, params.getString(Constants.MAP_PARAM_PROJECT_NAME_KEY));
-        config.put(Constants.MAP_PARAM_MODE_KEY, params.getString(Constants.MAP_PARAM_MODE_KEY));
-        config.put(Constants.MAP_PARAM_ON_FAILURE_KEY, params.getString(Constants.MAP_PARAM_ON_FAILURE_KEY));
-        config.put(Constants.MAP_PARAM_FILES_TO_EXCLUDE_KEY, params.getString(Constants.MAP_PARAM_FILES_TO_EXCLUDE_KEY));
-        config.put(Constants.MAP_PARAM_DIRS_TO_EXCLUDE_KEY, params.getString(Constants.MAP_PARAM_DIRS_TO_EXCLUDE_KEY));
-        config.put(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY, params.getString(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY));
-        config.put(Constants.MAP_PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY, params.getString(Constants.MAP_PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY));
-        config.put(Constants.MAP_PARAM_OPERATING_ENVIRONMENT_KEY, params.getString(Constants.MAP_PARAM_OPERATING_ENVIRONMENT_KEY));
-        config.put(Constants.MAP_PARAM_BRANCH_NAME_KEY, params.getString(Constants.MAP_PARAM_BRANCH_NAME_KEY));
-        config.put(Constants.MAP_PARAM_BRANCH_URI_KEY, params.getString(Constants.MAP_PARAM_BRANCH_URI_KEY));
-        config.put(Constants.MAP_PARAM_COMMIT_HASH_KEY, params.getString(Constants.MAP_PARAM_COMMIT_HASH_KEY));
-        config.put(Constants.MAP_PARAM_BUILD_VERSION_KEY, params.getString(Constants.MAP_PARAM_BUILD_VERSION_KEY));
-        config.put(Constants.MAP_PARAM_BUILD_URI_KEY, params.getString(Constants.MAP_PARAM_BUILD_URI_KEY));
+        Map<String, Object> map = getParams(params);
+        map.forEach( (k, v) -> config.put(k, (String) v) );
+
         return config;
     }
 
@@ -39,9 +39,8 @@ public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
     public void populateContextForCreate(@NotNull final Map<String, Object> context)
     {
         super.populateContextForCreate(context);
-        context.put("modes", getModes());
-        context.put("onFailureOptions", getOnFailureOptions());
-        context.put("operatingEnvironmentOptions",getOperatingEnvironmentOptions());
+        context.putAll(populateComboList());
+        context.put(Constants.MAP_PARAM_API_BASE_URI_KEY, Constants.SOOS_DEFAULT_API_URL);
         context.put(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY, Constants.MIN_RECOMMENDED_ANALYSIS_RESULT_MAX_WAIT);
         context.put(Constants.MAP_PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY, Constants.MIN_ANALYSIS_RESULT_POLLING_INTERVAL);
 
@@ -51,22 +50,13 @@ public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
     public void populateContextForEdit(@NotNull Map<String, Object> context, @NotNull TaskDefinition taskDefinition) {
         super.populateContextForEdit(context, taskDefinition);
 
-        context.put(Constants.MAP_PARAM_PROJECT_NAME_KEY, taskDefinition.getConfiguration().get(Constants.MAP_PARAM_PROJECT_NAME_KEY));
-        context.put(Constants.MAP_PARAM_MODE_KEY, taskDefinition.getConfiguration().get(Constants.MAP_PARAM_MODE_KEY));
-        context.put(Constants.MAP_PARAM_ON_FAILURE_KEY, taskDefinition.getConfiguration().get(Constants.MAP_PARAM_ON_FAILURE_KEY));
-        context.put(Constants.MAP_PARAM_FILES_TO_EXCLUDE_KEY, taskDefinition.getConfiguration().get(Constants.MAP_PARAM_FILES_TO_EXCLUDE_KEY));
-        context.put(Constants.MAP_PARAM_DIRS_TO_EXCLUDE_KEY, taskDefinition.getConfiguration().get(Constants.MAP_PARAM_DIRS_TO_EXCLUDE_KEY));
-        context.put(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY, taskDefinition.getConfiguration().get(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY));
-        context.put(Constants.MAP_PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY, taskDefinition.getConfiguration().get(Constants.MAP_PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY));
-        context.put(Constants.MAP_PARAM_OPERATING_ENVIRONMENT_KEY, taskDefinition.getConfiguration().get(Constants.MAP_PARAM_OPERATING_ENVIRONMENT_KEY));
-        context.put(Constants.MAP_PARAM_BRANCH_NAME_KEY, taskDefinition.getConfiguration().get(Constants.MAP_PARAM_BRANCH_NAME_KEY));
-        context.put(Constants.MAP_PARAM_BRANCH_URI_KEY, taskDefinition.getConfiguration().get(Constants.MAP_PARAM_BRANCH_URI_KEY));
-        context.put(Constants.MAP_PARAM_COMMIT_HASH_KEY, taskDefinition.getConfiguration().get(Constants.MAP_PARAM_COMMIT_HASH_KEY));
-        context.put(Constants.MAP_PARAM_BUILD_VERSION_KEY, taskDefinition.getConfiguration().get(Constants.MAP_PARAM_BUILD_VERSION_KEY));
-        context.put(Constants.MAP_PARAM_BUILD_URI_KEY, taskDefinition.getConfiguration().get(Constants.MAP_PARAM_BUILD_URI_KEY));
-        context.put("modes", getModes());
-        context.put("onFailureOptions", getOnFailureOptions());
-        context.put("operatingEnvironmentOptions",getOperatingEnvironmentOptions());
+        context.putAll(getParams(taskDefinition));
+
+        context.putAll(populateComboList());
+
+        if(StringUtils.isEmpty(taskDefinition.getConfiguration().get(Constants.MAP_PARAM_API_BASE_URI_KEY))){
+            context.put(Constants.MAP_PARAM_API_BASE_URI_KEY, Constants.SOOS_DEFAULT_API_URL);
+        }
     }
 
     @Override
@@ -95,4 +85,50 @@ public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
         map.put(OperatingEnvironment.WINDOWS.getValue(), OperatingEnvironment.WINDOWS.getName());
         return map;
     }
+    private Map<String, Object> populateComboList(){
+        Map<String, Object> map = new HashMap<>();
+        map.put(PluginConstants.MODES, getModes());
+        map.put(PluginConstants.ON_FAILURE_OPTIONS, getOnFailureOptions());
+        map.put(PluginConstants.OPERATING_SYSTEM_OPTIONS, getOperatingEnvironmentOptions());
+
+        return map;
+    }
+
+    private <T> Map<String, Object> getParams(T object){
+        Map<String, Object> map = new HashMap<>();
+
+        map.put(Constants.MAP_PARAM_PROJECT_NAME_KEY, getParamValue(object, Constants.MAP_PARAM_PROJECT_NAME_KEY));
+        map.put(Constants.MAP_PARAM_MODE_KEY, getParamValue(object, Constants.MAP_PARAM_MODE_KEY));
+        map.put(Constants.MAP_PARAM_ON_FAILURE_KEY, getParamValue(object, Constants.MAP_PARAM_ON_FAILURE_KEY));
+        map.put(Constants.MAP_PARAM_FILES_TO_EXCLUDE_KEY, getParamValue(object, Constants.MAP_PARAM_FILES_TO_EXCLUDE_KEY));
+        map.put(Constants.MAP_PARAM_DIRS_TO_EXCLUDE_KEY, getParamValue(object, Constants.MAP_PARAM_DIRS_TO_EXCLUDE_KEY));
+        map.put(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY, getParamValue(object, Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY));
+        map.put(Constants.MAP_PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY, getParamValue(object, Constants.MAP_PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY));
+        map.put(Constants.MAP_PARAM_API_BASE_URI_KEY, getParamValue(object, Constants.MAP_PARAM_API_BASE_URI_KEY));
+        map.put(Constants.MAP_PARAM_OPERATING_ENVIRONMENT_KEY, getParamValue(object, Constants.MAP_PARAM_OPERATING_ENVIRONMENT_KEY));
+        map.put(Constants.MAP_PARAM_BRANCH_NAME_KEY, getParamValue(object, Constants.MAP_PARAM_BRANCH_NAME_KEY));
+        map.put(Constants.MAP_PARAM_BRANCH_URI_KEY, getParamValue(object, Constants.MAP_PARAM_BRANCH_URI_KEY));
+        map.put(Constants.MAP_PARAM_COMMIT_HASH_KEY, getParamValue(object, Constants.MAP_PARAM_COMMIT_HASH_KEY));
+        map.put(Constants.MAP_PARAM_BUILD_VERSION_KEY, getParamValue(object, Constants.MAP_PARAM_BUILD_VERSION_KEY));
+        map.put(Constants.MAP_PARAM_BUILD_URI_KEY, getParamValue(object, Constants.MAP_PARAM_BUILD_URI_KEY));
+
+
+        return map;
+    }
+
+    private <T> String getParamValue(T object, String param){
+        String value;
+        if(object instanceof TaskDefinition){
+            TaskDefinition taskDefinition = (TaskDefinition) object;
+            Map<String, String> objectMap = taskDefinition.getConfiguration();
+
+            value = objectMap.get(param);
+        } else {
+            ActionParametersMap actionParametersMap = (ActionParametersMap) object;
+            value = actionParametersMap.getString(param);
+        }
+
+        return value;
+    }
+
 }

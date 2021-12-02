@@ -1,4 +1,4 @@
-package io.soos;
+package io.soos.domain;
 
 public enum OnFailure {
     FAIL_THE_BUILD("Fail the build","fail_the_build"),

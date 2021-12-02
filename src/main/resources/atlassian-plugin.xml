@@ -6,7 +6,7 @@
         <param name="plugin-icon">images/SOOS_Icon.png</param>
         <param name="plugin-logo">images/SOOS_Icon.png</param>
     </plugin-info>
-    <taskType key="SoosSCA" name="SOOS SCA" class="io.soos.SoosSCATask">
+    <taskType key="SOOS-SCA" name="SOOS SCA" class="io.soos.SoosSCATask">
         <description>Scan your open source software for vulnerabilities and control the introduction of new dependencies</description>
         <configuration class="io.soos.SoosSCATaskConfigurator"/>
         <resource type="freemarker" name="edit" location="templates/editSoosSCATask.ftl"/>

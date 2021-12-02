@@ -1,4 +1,4 @@
-package io.soos;
+package io.soos.domain;
 
 public enum OperatingEnvironment {
     LINUX("Linux", "unix"),

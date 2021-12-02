@@ -1,8 +1,13 @@
-package io.soos;
+package io.soos.commons;
 
 public interface ErrorMessage {
     public String SHOULD_NOT_BE_NULL = "Should not be null";
-    public String SHOULD_BE_MORE_THAN_5_CHARACTERS = "Should be more than 5 characters";
     public String SHOULD_BE_A_NUMBER = "Should be a number";
     public String SHOULD_BE_ONE_PERMITTED_OPTION = "Should be one permitted option";
+
+
+    static public String shouldBeMoreThanXCharacters(Integer number){
+        StringBuilder msg = new StringBuilder("Should be more than ").append(number).append("characters.");
+        return msg.toString();
+    }
 }
