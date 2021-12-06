@@ -15,16 +15,16 @@ import java.util.Arrays;
 
 public class Validation {
 
-    private String projectName;
-    private String analysisResultMaxWait;
-    private String analysisResultPollingInterval;
+    private static String projectName;
+    private static String analysisResultMaxWait;
+    private static String analysisResultPollingInterval;
 
     public Validation(){};
 
-    public void validateParams(ActionParametersMap params, ErrorCollection errorCollection){
-        this.projectName = params.getString(Constants.MAP_PARAM_PROJECT_NAME_KEY);
-        this.analysisResultMaxWait = params.getString(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY);
-        this.analysisResultPollingInterval = params.getString(Constants.MAP_PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY);
+    public static void validateParams(ActionParametersMap params, ErrorCollection errorCollection){
+        projectName = params.getString(Constants.MAP_PARAM_PROJECT_NAME_KEY);
+        analysisResultMaxWait = params.getString(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY);
+        analysisResultPollingInterval = params.getString(Constants.MAP_PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY);
 
         if( StringUtils.isEmpty(projectName) ) {
             errorCollection.addError(Constants.MAP_PARAM_PROJECT_NAME_KEY, ErrorMessage.SHOULD_NOT_BE_NULL);
@@ -40,7 +40,7 @@ public class Validation {
         }
     }
 
-    private Boolean validateIsNotEmptyAndIsNumeric( String value ) {
+    private static Boolean validateIsNotEmptyAndIsNumeric( String value ) {
         return !ObjectUtils.isEmpty(value) && !StringUtils.isNumeric(value);
     }
 }

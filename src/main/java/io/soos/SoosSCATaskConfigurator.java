@@ -19,8 +19,6 @@ import java.util.Map;
 
 public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
 
-    private final Validation validation = new Validation();
-
     @NotNull
     @Override
     public Map<String, String> generateTaskConfigMap(@NotNull final ActionParametersMap params, @Nullable final TaskDefinition previousTaskDefinition)
@@ -60,7 +58,7 @@ public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
     @Override
     public void validate(@NotNull final ActionParametersMap params, @NotNull final ErrorCollection errorCollection){
         super.validate(params, errorCollection);
-        this.validation.validateParams(params, errorCollection);
+        Validation.validateParams(params, errorCollection);
     }
 
     private Map<String, String> getModes(){
