@@ -16,9 +16,6 @@ import java.util.Arrays;
 public class Validation {
 
     private String projectName;
-    private String mode;
-    private String onFailure;
-    private String operatingEnvironment;
     private String analysisResultMaxWait;
     private String analysisResultPollingInterval;
 
@@ -26,9 +23,6 @@ public class Validation {
 
     public void validateParams(ActionParametersMap params, ErrorCollection errorCollection){
         this.projectName = params.getString(Constants.MAP_PARAM_PROJECT_NAME_KEY);
-        this.mode = params.getString(Constants.MAP_PARAM_MODE_KEY);
-        this.onFailure = params.getString(Constants.MAP_PARAM_ON_FAILURE_KEY);
-        this.operatingEnvironment = params.getString(Constants.MAP_PARAM_OPERATING_ENVIRONMENT_KEY);
         this.analysisResultMaxWait = params.getString(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY);
         this.analysisResultPollingInterval = params.getString(Constants.MAP_PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY);
 
