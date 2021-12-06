@@ -7,7 +7,6 @@ import io.soos.commons.PluginConstants;
 import io.soos.commons.Utils;
 import io.soos.integration.commons.Constants;
 import io.soos.integration.domain.SOOS;
-import io.soos.integration.domain.analysis.AnalysisResultResponse;
 import io.soos.integration.domain.structure.StructureResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -39,30 +38,27 @@ public class SoosSCATask implements TaskType {
             long filesProcessed = soos.sendManifestFiles(structure.getProjectId(), structure.getAnalysisId());
             StringBuilder fileProcessed = new StringBuilder("File processed: ").append(String.valueOf(filesProcessed));
             buildLogger.addBuildLogEntry(fileProcessed.toString());
-            LOG.info(fileProcessed.toString());
             if (filesProcessed > 0L) {
 
-                AnalysisResultResponse results;
                 String reportUrl = soos.getStructure().getReportURL();
                 StringBuilder reportMsg = new StringBuilder();
                 reportMsg.append("Open the following url to see the report: ").append(reportUrl);
 
                 switch(soos.getMode()) {
                     case RUN_AND_WAIT:
-                        soos.startAnalysis(structure.getProjectId(), structure.getAnalysisId());
                         buildLogger.addBuildLogEntry(PluginConstants.RUN_AND_WAIT_MODE_SELECTED);
-                        results = soos.getResults(structure.getReportStatusUrl());
+                        startAnalysis(soos);
+                        getResult(soos);
                         buildLogger.addBuildLogEntry(reportMsg.toString());
-                        LOG.info(results.toString());
+                        break;
                     case ASYNC_INIT:
-                        soos.startAnalysis(structure.getProjectId(), structure.getAnalysisId());
                         buildLogger.addBuildLogEntry(PluginConstants.ASYNC_INIT_MODE_SELECTED);
+                        startAnalysis(soos);
                         break;
                     case ASYNC_RESULT:
                         buildLogger.addBuildLogEntry(PluginConstants.ASYNC_RESULT_MODE_SELECTED);
-                        results = soos.getResults(structure.getReportStatusUrl());
+                        getResult(soos);
                         buildLogger.addBuildLogEntry(reportMsg.toString());
-                        LOG.info(results.toString());
                         break;
                 }
             }
@@ -71,19 +67,25 @@ public class SoosSCATask implements TaskType {
             if(onFailure.equals(PluginConstants.FAIL_THE_BUILD)){
                 StringBuilder errorMsg = new StringBuilder();
                 errorMsg.append("SOOS SCA cannot be done, error: ").append(e).append("- the build has failed!");
-
-                LOG.error(errorMsg.toString());
                 buildLogger.addErrorLogEntry(errorMsg.toString());
                 return TaskResultBuilder.newBuilder(taskContext).failed().build();
             }
             StringBuilder errorMsg = new StringBuilder();
             errorMsg.append("SOOS SCA cannot be done, error: ").append(e).append("- Continuing the build... ");
-
-            LOG.error(errorMsg.toString());
             buildLogger.addBuildLogEntry(errorMsg.toString());
         }
 
         return TaskResultBuilder.newBuilder(taskContext).success().build();
+    }
+
+    private void startAnalysis(SOOS soos) throws Exception {
+        StructureResponse structure = soos.getStructure();
+        soos.startAnalysis(structure.getProjectId(), structure.getAnalysisId());
+    }
+
+    private void getResult(SOOS soos) throws Exception {
+        StructureResponse structure = soos.getStructure();
+        soos.getResults(structure.getReportStatusUrl());
     }
 
     private Map<String, String> getTaskParameters(TaskContext taskContext){

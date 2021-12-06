@@ -38,36 +38,15 @@ public class Validation {
         if( !StringUtils.isEmpty(projectName) && projectName.length() < PluginConstants.MIN_NUMBER_OF_CHARACTERS) {
             errorCollection.addError(Constants.MAP_PARAM_PROJECT_NAME_KEY, ErrorMessage.shouldBeMoreThanXCharacters(PluginConstants.MIN_NUMBER_OF_CHARACTERS));
         }
-        if( !validateMode() ){
-            errorCollection.addError(Constants.MAP_PARAM_MODE_KEY, ErrorMessage.SHOULD_BE_ONE_PERMITTED_OPTION);
-        }
-        if( !validateOnFailure() ){
-            errorCollection.addError(Constants.MAP_PARAM_ON_FAILURE_KEY, ErrorMessage.SHOULD_BE_ONE_PERMITTED_OPTION);
-        }
-        if( !validateOE() ){
-            errorCollection.addError(Constants.MAP_PARAM_OPERATING_ENVIRONMENT_KEY, ErrorMessage.SHOULD_BE_ONE_PERMITTED_OPTION);
-        }
-        if( !ObjectUtils.isEmpty(analysisResultMaxWait) && !StringUtils.isNumeric(analysisResultMaxWait) ) {
+        if( validateIsNotEmptyAndIsNumeric(analysisResultMaxWait) ) {
             errorCollection.addError(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY, ErrorMessage.SHOULD_BE_A_NUMBER);
         }
-        if( !ObjectUtils.isEmpty(analysisResultPollingInterval) && !StringUtils.isNumeric(analysisResultPollingInterval) ) {
+        if( validateIsNotEmptyAndIsNumeric(analysisResultPollingInterval) ) {
             errorCollection.addError(Constants.MAP_PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY, ErrorMessage.SHOULD_BE_A_NUMBER);
         }
     }
 
-    private Boolean validateMode(){
-        return !StringUtils.isEmpty(this.mode) && Arrays.stream(Mode.values()).anyMatch(mode -> mode.getMode().equals(this.mode));
+    private Boolean validateIsNotEmptyAndIsNumeric( String value ) {
+        return !ObjectUtils.isEmpty(value) && !StringUtils.isNumeric(value);
     }
-
-    private Boolean validateOnFailure(){
-        return !StringUtils.isEmpty(this.onFailure) && Arrays.stream(OnFailure.values()).anyMatch(onFailure -> onFailure.getValue().equals(this.onFailure));
-    }
-
-    private Boolean validateOE() {
-        if (!StringUtils.isEmpty(this.operatingEnvironment)) {
-            return Arrays.stream(OperatingEnvironment.values()).anyMatch(opEn -> opEn.getValue().equals(this.operatingEnvironment));
-        }
-        return true;
-    }
-
 }
