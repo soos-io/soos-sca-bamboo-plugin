@@ -48,7 +48,7 @@ public class SoosSCATask implements TaskType {
                     case RUN_AND_WAIT:
                         buildLogger.addBuildLogEntry(PluginConstants.RUN_AND_WAIT_MODE_SELECTED);
                         startAnalysis(soos);
-                        getResult(soos);
+                        processResult(soos);
                         buildLogger.addBuildLogEntry(reportMsg.toString());
                         break;
                     case ASYNC_INIT:
@@ -57,7 +57,7 @@ public class SoosSCATask implements TaskType {
                         break;
                     case ASYNC_RESULT:
                         buildLogger.addBuildLogEntry(PluginConstants.ASYNC_RESULT_MODE_SELECTED);
-                        getResult(soos);
+                        processResult(soos);
                         buildLogger.addBuildLogEntry(reportMsg.toString());
                         break;
                 }
@@ -83,7 +83,7 @@ public class SoosSCATask implements TaskType {
         soos.startAnalysis(structure.getProjectId(), structure.getAnalysisId());
     }
 
-    private void getResult(SOOS soos) throws Exception {
+    private void processResult(SOOS soos) throws Exception {
         StructureResponse structure = soos.getStructure();
         soos.getResults(structure.getReportStatusUrl());
     }

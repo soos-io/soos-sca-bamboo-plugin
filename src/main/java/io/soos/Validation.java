@@ -28,19 +28,23 @@ public class Validation {
 
         if( StringUtils.isEmpty(projectName) ) {
             errorCollection.addError(Constants.MAP_PARAM_PROJECT_NAME_KEY, ErrorMessage.SHOULD_NOT_BE_NULL);
-        }
-        if( !StringUtils.isEmpty(projectName) && projectName.length() < PluginConstants.MIN_NUMBER_OF_CHARACTERS) {
+        } else if ( projectName.length() < PluginConstants.MIN_NUMBER_OF_CHARACTERS) {
             errorCollection.addError(Constants.MAP_PARAM_PROJECT_NAME_KEY, ErrorMessage.shouldBeMoreThanXCharacters(PluginConstants.MIN_NUMBER_OF_CHARACTERS));
         }
-        if( validateIsNotEmptyAndIsNumeric(analysisResultMaxWait) ) {
+        if( !validateIsNumeric(analysisResultMaxWait) ) {
             errorCollection.addError(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY, ErrorMessage.SHOULD_BE_A_NUMBER);
         }
-        if( validateIsNotEmptyAndIsNumeric(analysisResultPollingInterval) ) {
+        if( !validateIsNumeric(analysisResultPollingInterval) ) {
             errorCollection.addError(Constants.MAP_PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY, ErrorMessage.SHOULD_BE_A_NUMBER);
         }
     }
 
-    private static Boolean validateIsNotEmptyAndIsNumeric( String value ) {
-        return !ObjectUtils.isEmpty(value) && !StringUtils.isNumeric(value);
+    private static Boolean validateIsNumeric( String value ) {
+        try {
+            return !StringUtils.isNumeric(value);
+        } catch (Exception e) {
+            System.out.println(e);
+            return false;
+        }
     }
 }
