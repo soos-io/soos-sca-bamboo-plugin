@@ -1,0 +1,15 @@
+<atlassian-plugin key="${atlassian.plugin.key}" name="${project.name}" plugins-version="2">
+    <plugin-info>
+        <description>${project.description}</description>
+        <version>${project.version}</version>
+        <vendor name="${project.organization.name}" url="${project.organization.url}" />
+        <param name="plugin-icon">images/SOOS_Icon.png</param>
+        <param name="plugin-logo">images/SOOS_Icon.png</param>
+    </plugin-info>
+    <taskType key="SOOS-SCA" name="SOOS SCA" class="io.soos.SoosSCATask">
+        <description>Scan your open source software for vulnerabilities and control the introduction of new dependencies</description>
+        <configuration class="io.soos.SoosSCATaskConfigurator"/>
+        <resource type="freemarker" name="edit" location="templates/editSoosSCATask.ftl"/>
+        <resource type="download" name="icon" location="images/SOOS_Icon.png"/>
+    </taskType>
+</atlassian-plugin>
