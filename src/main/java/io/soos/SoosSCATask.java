@@ -37,7 +37,6 @@ public class SoosSCATask implements TaskType {
             SOOS soos = new SOOS();
             soos.getContext().setScriptVersion(getVersionFromProperties());
             StructureResponse structure = soos.getStructure();
-            LOG.info(structure.toString());
             long filesProcessed = soos.sendManifestFiles(structure.getProjectId(), structure.getAnalysisId());
             StringBuilder fileProcessed = new StringBuilder("File processed: ").append(String.valueOf(filesProcessed));
             buildLogger.addBuildLogEntry(fileProcessed.toString());
@@ -163,11 +162,12 @@ public class SoosSCATask implements TaskType {
         Properties prop = new Properties();
         try {
             prop.load(this.getClass().getResourceAsStream(PluginConstants.PROPERTIES_FILE));
+            return prop.getProperty(PluginConstants.VERSION);
         } catch (IOException e) {
             StringBuilder error = new StringBuilder("Cannot read file ").append("'").append(PluginConstants.PROPERTIES_FILE).append("'");
             LOG.error(error.toString(), e);
         }
-        return prop.getProperty(PluginConstants.VERSION);
+        return null;
     }
 
 }
