@@ -6,9 +6,9 @@
 <label style="color: darkgray;font-size: 12px">Separate the file names with a comma</label>
 [@ww.textfield label="Directories To Exclude" name="dirsToExclude" value=dirsToExclude /]
 <label style="color: darkgray;font-size: 12px">Separate the directory names with a comma</label>
-[@ww.textfield label="Analysis Result Max Wait" name="analysisResultMaxWait" value=analysisResultMaxWait /]
-[@ww.textfield label="Analysis Result Pooling Interval" name="analysisResultPollingInterval" value=analysisResultPollingInterval/]
-[@ww.textfield label="API Base URL" name="apiBaseURI" value=apiBaseURI/]
+[@ww.textfield label="Analysis Result Max Wait" name="analysisResultMaxWait" default=analysisResultMaxWait /]
+[@ww.textfield label="Analysis Result Pooling Interval" name="analysisResultPollingInterval" default=analysisResultPollingInterval/]
+[@ww.textfield label="API Base URL" name="apiBaseURI" default=apiBaseURI/]
 [@ww.textfield label="Branch Name" name="branchName" value=branchName/]
 [@ww.textfield label="Branch URI" name="branchURI" value=branchURI /]
 [@ww.textfield label="Commit Hash" name="commitHash" value=commitHash /]
