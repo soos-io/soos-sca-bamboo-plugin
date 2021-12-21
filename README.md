@@ -16,7 +16,7 @@ SOOS is the affordable, easy-to-integrate Software Composition Analysis solution
 
 ## How to Use
 
-The **SOOS SCA Plugi** will locate and analyze any supported manifest files under the specified directory.
+The **SOOS SCA Plugin** will locate and analyze any supported manifest files under the specified directory.
 
 To use SOOS SCA Plugin you need to:
 
