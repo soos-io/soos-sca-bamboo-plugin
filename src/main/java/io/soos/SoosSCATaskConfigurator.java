@@ -107,8 +107,9 @@ public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
         map.put(Constants.MAP_PARAM_COMMIT_HASH_KEY, getParamValue(object, Constants.MAP_PARAM_COMMIT_HASH_KEY));
         map.put(Constants.MAP_PARAM_BUILD_VERSION_KEY, getParamValue(object, Constants.MAP_PARAM_BUILD_VERSION_KEY));
         map.put(Constants.MAP_PARAM_BUILD_URI_KEY, getParamValue(object, Constants.MAP_PARAM_BUILD_URI_KEY));
+        map.put(PluginConstants.REPORT_STATUS_URL, getParamValue(object, PluginConstants.REPORT_STATUS_URL));
 
-
+        map.put("isSaved", "true");
         return map;
     }
 
