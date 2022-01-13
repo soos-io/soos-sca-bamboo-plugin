@@ -15,4 +15,5 @@ public interface PluginConstants {
     String OPERATING_SYSTEM_OPTIONS = "operatingEnvironmentOptions";
     String PROPERTIES_FILE = "/bamboo.properties";
     String VERSION = "version";
+    String REPORT_STATUS_URL = "reportStatusUrl";
 }
