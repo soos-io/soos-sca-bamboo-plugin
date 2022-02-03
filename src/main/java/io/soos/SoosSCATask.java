@@ -5,7 +5,6 @@ import com.atlassian.bamboo.task.*;
 import com.atlassian.bamboo.variable.VariableDefinitionContext;
 import io.soos.commons.PluginConstants;
 import io.soos.commons.Utils;
-
 import io.soos.integration.commons.Constants;
 import io.soos.integration.domain.Mode;
 import io.soos.integration.domain.SOOS;
@@ -21,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+
 public class SoosSCATask implements TaskType {
     private final Logger LOG = LoggerFactory.getLogger(SoosSCATask.class);
 
@@ -28,19 +28,17 @@ public class SoosSCATask implements TaskType {
     @Override
     public TaskResult execute(@NotNull TaskContext taskContext) throws TaskException {
         final BuildLogger buildLogger = taskContext.getBuildLogger();
-
         Map<String, String> map = getTaskParameters(taskContext);
         map.putAll(getEnvironmentVariable(taskContext));
 
         setEnvProperties(map, buildLogger);
 
         String onFailure = taskContext.getConfigurationMap().get(Constants.MAP_PARAM_ON_FAILURE_KEY);
-        String reportStatusUrl = taskContext.getConfigurationMap().get(PluginConstants.REPORT_STATUS_URL);
         try {
-
             SOOS soos = new SOOS();
-            StructureResponse structure = null;
-            AnalysisResultResponse result = null;
+            soos.getContext().setScriptVersion(getVersionFromProperties());
+            StructureResponse structure;
+            AnalysisResultResponse result;
             LOG.info("--------------------------------------------");
             switch (soos.getMode()) {
                 case RUN_AND_WAIT:
@@ -58,10 +56,12 @@ public class SoosSCATask implements TaskType {
                     LOG.info("Async Init Scan");
                     LOG.info("--------------------------------------------");
                     structure = soos.startAnalysis();
+                    Utils.saveReportStatusUrl(structure.getReportStatusUrl(), taskContext);
                     buildLogger.addBuildLogEntry(createReportMsg(structure.getReportStatusUrl(), soos.getMode()));
                     LOG.info("Analysis request is running, access the report status using this link: {}", structure.getReportStatusUrl());
                     break;
                 case ASYNC_RESULT:
+                    String reportStatusUrl = Utils.getReportStatusUrl(taskContext,null);
                     buildLogger.addBuildLogEntry(PluginConstants.ASYNC_RESULT_MODE_SELECTED);
                     LOG.info("Async Result Scan");
                     LOG.info("--------------------------------------------");
@@ -91,7 +91,7 @@ public class SoosSCATask implements TaskType {
         private String createReportMsg(String reportUrl, Mode mode) {
             StringBuilder reportMsg = new StringBuilder();
             if ( StringUtils.equals(mode.getMode(), Mode.ASYNC_INIT.getMode()) ) {
-                reportMsg.append("Analysis request is running, access the report status using this link: \n");
+                reportMsg.append("Report status URL: \n");
                 reportMsg.append(reportUrl);
             } else {
                 reportMsg.append("Open the following url to see the report: ").append(reportUrl);
@@ -117,14 +117,13 @@ public class SoosSCATask implements TaskType {
         map.put(Constants.PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY, params.get(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY));
         map.put(Constants.PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY, params.get(Constants.MAP_PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY));
         map.put(Constants.PARAM_API_BASE_URI_KEY, params.get(Constants.MAP_PARAM_API_BASE_URI_KEY));
-        map.put(Constants.PARAM_OPERATING_ENVIRONMENT_KEY, params.get(Constants.MAP_PARAM_OPERATING_ENVIRONMENT_KEY));
+        map.put(Constants.PARAM_OPERATING_ENVIRONMENT_KEY, Utils.getOperatingSystem());
         map.put(Constants.PARAM_BRANCH_NAME_KEY, params.get(Constants.MAP_PARAM_BRANCH_NAME_KEY));
         map.put(Constants.PARAM_BRANCH_URI_KEY, params.get(Constants.MAP_PARAM_BRANCH_URI_KEY));
         map.put(Constants.PARAM_COMMIT_HASH_KEY, params.get(Constants.MAP_PARAM_COMMIT_HASH_KEY));
-        map.put(Constants.PARAM_BUILD_VERSION_KEY, params.get(Constants.MAP_PARAM_BUILD_VERSION_KEY));
+        map.put(Constants.PARAM_BUILD_VERSION_KEY, String.valueOf(taskContext.getBuildContext().getBuildNumber()));
         map.put(Constants.PARAM_BUILD_URI_KEY, params.get(Constants.MAP_PARAM_BUILD_URI_KEY));
         map.put(Constants.PARAM_INTEGRATION_NAME_KEY, PluginConstants.INTEGRATION_NAME);
-        map.put(PluginConstants.REPORT_STATUS_URL, params.get(PluginConstants.REPORT_STATUS_URL));
 
 
         if(StringUtils.isBlank(params.get(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY))) {
