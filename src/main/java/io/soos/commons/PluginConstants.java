@@ -12,8 +12,11 @@ public interface PluginConstants {
     Integer MIN_NUMBER_OF_CHARACTERS = 5;
     String MODES = "modes";
     String ON_FAILURE_OPTIONS = "onFailureOptions";
-    String OPERATING_SYSTEM_OPTIONS = "operatingEnvironmentOptions";
     String PROPERTIES_FILE = "/bamboo.properties";
     String VERSION = "version";
     String REPORT_STATUS_URL = "reportStatusUrl";
+    String OS_NAME = "os.name";
+    String SLASH = "/";
+    String BACK_SLASH = "\\";
+    String RESULT_FILE = "result.txt";
 }

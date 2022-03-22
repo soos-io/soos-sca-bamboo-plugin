@@ -5,12 +5,11 @@ import com.atlassian.bamboo.task.*;
 import com.atlassian.bamboo.variable.VariableDefinitionContext;
 import io.soos.commons.PluginConstants;
 import io.soos.commons.Utils;
-
 import io.soos.integration.commons.Constants;
 import io.soos.integration.domain.Mode;
 import io.soos.integration.domain.SOOS;
 import io.soos.integration.domain.analysis.AnalysisResultResponse;
-import io.soos.integration.domain.structure.StructureResponse;
+import io.soos.integration.domain.scan.ScanResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -21,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+
 public class SoosSCATask implements TaskType {
     private final Logger LOG = LoggerFactory.getLogger(SoosSCATask.class);
 
@@ -28,47 +28,45 @@ public class SoosSCATask implements TaskType {
     @Override
     public TaskResult execute(@NotNull TaskContext taskContext) throws TaskException {
         final BuildLogger buildLogger = taskContext.getBuildLogger();
-
         Map<String, String> map = getTaskParameters(taskContext);
-        map.putAll(getEnvironmentVariable(taskContext));
-
-        setEnvProperties(map, buildLogger);
-
         String onFailure = taskContext.getConfigurationMap().get(Constants.MAP_PARAM_ON_FAILURE_KEY);
-        String reportStatusUrl = taskContext.getConfigurationMap().get(PluginConstants.REPORT_STATUS_URL);
         try {
-
+            map.putAll(getEnvironmentVariable(taskContext));
+            setEnvProperties(map, buildLogger);
             SOOS soos = new SOOS();
-            StructureResponse structure = null;
-            AnalysisResultResponse result = null;
+            soos.getContext().setScriptVersion(getVersionFromProperties());
+            ScanResponse scan;
+            AnalysisResultResponse result;
             LOG.info("--------------------------------------------");
             switch (soos.getMode()) {
                 case RUN_AND_WAIT:
                     buildLogger.addBuildLogEntry(PluginConstants.RUN_AND_WAIT_MODE_SELECTED);
                     LOG.info("Run and Wait Scan");
                     LOG.info("--------------------------------------------");
-                    structure = soos.startAnalysis();
+                    scan = soos.startAnalysis();
                     LOG.info("Analysis request is running");
-                    result = soos.getResults(structure.getReportStatusUrl());
-                    buildLogger.addBuildLogEntry(createReportMsg(result.getReportUrl(), soos.getMode()));
-                    LOG.info("Scan analysis finished successfully. To see the results go to: {}", result.getReportUrl());
+                    result = soos.getResults(scan.getScanStatusUrl());
+                    buildLogger.addBuildLogEntry(createReportMsg(result.getScanUrl(), soos.getMode()));
+                    LOG.info("Scan analysis finished successfully. To see the results go to: {}", result.getScanUrl());
                     break;
                 case ASYNC_INIT:
                     buildLogger.addBuildLogEntry(PluginConstants.ASYNC_INIT_MODE_SELECTED);
                     LOG.info("Async Init Scan");
                     LOG.info("--------------------------------------------");
-                    structure = soos.startAnalysis();
-                    buildLogger.addBuildLogEntry(createReportMsg(structure.getReportStatusUrl(), soos.getMode()));
-                    LOG.info("Analysis request is running, access the report status using this link: {}", structure.getReportStatusUrl());
+                    scan = soos.startAnalysis();
+                    Utils.saveReportStatusUrl(scan.getScanStatusUrl(), taskContext);
+                    buildLogger.addBuildLogEntry(createReportMsg(scan.getScanStatusUrl(), soos.getMode()));
+                    LOG.info("Analysis request is running, access the report status using this link: {}", scan.getScanStatusUrl());
                     break;
                 case ASYNC_RESULT:
+                    String reportStatusUrl = Utils.getReportStatusUrl(taskContext,null);
                     buildLogger.addBuildLogEntry(PluginConstants.ASYNC_RESULT_MODE_SELECTED);
                     LOG.info("Async Result Scan");
                     LOG.info("--------------------------------------------");
                     LOG.info("Checking Scan Status from: {}", reportStatusUrl );
                     result = soos.getResults(reportStatusUrl);
-                    buildLogger.addBuildLogEntry(createReportMsg(result.getReportUrl(), soos.getMode()));
-                    LOG.info("Scan analysis finished successfully. To see the results go to: {}", result.getReportUrl());
+                    buildLogger.addBuildLogEntry(createReportMsg(result.getScanUrl(), soos.getMode()));
+                    LOG.info("Scan analysis finished successfully. To see the results go to: {}", result.getScanUrl());
                     break;
                 default:
                     throw new Exception("Invalid SCA Mode");
@@ -91,7 +89,7 @@ public class SoosSCATask implements TaskType {
         private String createReportMsg(String reportUrl, Mode mode) {
             StringBuilder reportMsg = new StringBuilder();
             if ( StringUtils.equals(mode.getMode(), Mode.ASYNC_INIT.getMode()) ) {
-                reportMsg.append("Analysis request is running, access the report status using this link: \n");
+                reportMsg.append("Report status URL: \n");
                 reportMsg.append(reportUrl);
             } else {
                 reportMsg.append("Open the following url to see the report: ").append(reportUrl);
@@ -106,7 +104,6 @@ public class SoosSCATask implements TaskType {
         String workingDirectoryPath = taskContext.getWorkingDirectory().getPath();
 
         String dirsToExclude = addSoosDirToExclusion(taskContext.getConfigurationMap().get(Constants.MAP_PARAM_DIRS_TO_EXCLUDE_KEY));
-
         map.put(Constants.PARAM_PROJECT_NAME_KEY, params.get(Constants.MAP_PARAM_PROJECT_NAME_KEY));
         map.put(Constants.PARAM_MODE_KEY, params.get(Constants.MAP_PARAM_MODE_KEY));
         map.put(Constants.PARAM_ON_FAILURE_KEY, params.get(Constants.MAP_PARAM_ON_FAILURE_KEY));
@@ -117,14 +114,13 @@ public class SoosSCATask implements TaskType {
         map.put(Constants.PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY, params.get(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY));
         map.put(Constants.PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY, params.get(Constants.MAP_PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY));
         map.put(Constants.PARAM_API_BASE_URI_KEY, params.get(Constants.MAP_PARAM_API_BASE_URI_KEY));
-        map.put(Constants.PARAM_OPERATING_ENVIRONMENT_KEY, params.get(Constants.MAP_PARAM_OPERATING_ENVIRONMENT_KEY));
+        map.put(Constants.PARAM_OPERATING_ENVIRONMENT_KEY, Utils.getOperatingSystem());
         map.put(Constants.PARAM_BRANCH_NAME_KEY, params.get(Constants.MAP_PARAM_BRANCH_NAME_KEY));
         map.put(Constants.PARAM_BRANCH_URI_KEY, params.get(Constants.MAP_PARAM_BRANCH_URI_KEY));
         map.put(Constants.PARAM_COMMIT_HASH_KEY, params.get(Constants.MAP_PARAM_COMMIT_HASH_KEY));
-        map.put(Constants.PARAM_BUILD_VERSION_KEY, params.get(Constants.MAP_PARAM_BUILD_VERSION_KEY));
+        map.put(Constants.PARAM_BUILD_VERSION_KEY, String.valueOf(taskContext.getBuildContext().getBuildNumber()));
         map.put(Constants.PARAM_BUILD_URI_KEY, params.get(Constants.MAP_PARAM_BUILD_URI_KEY));
         map.put(Constants.PARAM_INTEGRATION_NAME_KEY, PluginConstants.INTEGRATION_NAME);
-        map.put(PluginConstants.REPORT_STATUS_URL, params.get(PluginConstants.REPORT_STATUS_URL));
 
 
         if(StringUtils.isBlank(params.get(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY))) {
@@ -159,12 +155,14 @@ public class SoosSCATask implements TaskType {
         return PluginConstants.SOOS_DIR_NAME;
     }
 
-    private Map<String, String> getEnvironmentVariable(TaskContext taskContext){
+    private Map<String, String> getEnvironmentVariable(TaskContext taskContext) throws Exception {
         Map<String, String> map = new HashMap<>();
 
         final VariableDefinitionContext clientId = Utils.getVariable(taskContext, PluginConstants.SOOS_CLIENT_ID);
         final VariableDefinitionContext apiKey = Utils.getVariable(taskContext, PluginConstants.SOOS_API_KEY);
-
+        if(clientId == null || apiKey == null){
+            throw new Exception("There was an issue retrieving your Client ID and API Key, make sure you have them set up on your global variables.");
+        }
         map.put(PluginConstants.SOOS_CLIENT_ID,clientId.getValue());
         map.put(PluginConstants.SOOS_API_KEY,apiKey.getValue());
 
