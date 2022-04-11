@@ -36,7 +36,7 @@ public class SoosSCATask implements TaskType {
             SOOS soos = new SOOS();
             soos.getContext().setScriptVersion(getVersionFromProperties());
             ScanResponse scan;
-            AnalysisResultResponse result;
+            AnalysisResultResponse result = null;
             LOG.info("--------------------------------------------");
             switch (soos.getMode()) {
                 case RUN_AND_WAIT:
@@ -46,8 +46,10 @@ public class SoosSCATask implements TaskType {
                     scan = soos.startAnalysis();
                     LOG.info("Analysis request is running");
                     result = soos.getResults(scan.getScanStatusUrl());
-                    buildLogger.addBuildLogEntry(createReportMsg(result.getScanUrl(), soos.getMode()));
+                    buildLogger.addBuildLogEntry(createReportMsg(result, soos.getMode()));
+                    buildLogger.addBuildLogEntry("Vulnerabilities found: " + result.getVulnerabilities() + " Violations found: " + result.getViolations());
                     LOG.info("Scan analysis finished successfully. To see the results go to: {}", result.getScanUrl());
+                    LOG.info("Vulnerabilities found: {}, Violations found: {}", result.getVulnerabilities(), result.getViolations());
                     break;
                 case ASYNC_INIT:
                     buildLogger.addBuildLogEntry(PluginConstants.ASYNC_INIT_MODE_SELECTED);
@@ -55,7 +57,7 @@ public class SoosSCATask implements TaskType {
                     LOG.info("--------------------------------------------");
                     scan = soos.startAnalysis();
                     Utils.saveReportStatusUrl(scan.getScanStatusUrl(), taskContext);
-                    buildLogger.addBuildLogEntry(createReportMsg(scan.getScanStatusUrl(), soos.getMode()));
+                    buildLogger.addBuildLogEntry(createReportMsg(result, soos.getMode()));
                     LOG.info("Analysis request is running, access the report status using this link: {}", scan.getScanStatusUrl());
                     break;
                 case ASYNC_RESULT:
@@ -65,12 +67,18 @@ public class SoosSCATask implements TaskType {
                     LOG.info("--------------------------------------------");
                     LOG.info("Checking Scan Status from: {}", reportStatusUrl );
                     result = soos.getResults(reportStatusUrl);
-                    buildLogger.addBuildLogEntry(createReportMsg(result.getScanUrl(), soos.getMode()));
+                    buildLogger.addBuildLogEntry(createReportMsg(result, soos.getMode()));
+                    buildLogger.addBuildLogEntry("Vulnerabilities found: " + result.getVulnerabilities() + " Violations found: " + result.getViolations());
                     LOG.info("Scan analysis finished successfully. To see the results go to: {}", result.getScanUrl());
+                    LOG.info("Vulnerabilities found: {}, Violations found: {}", result.getVulnerabilities(), result.getViolations());
                     break;
                 default:
                     throw new Exception("Invalid SCA Mode");
             }
+            taskContext.getBuildContext().getBuildResult().getCustomBuildData().put("isSOOSSCAScanTask", "true");
+            taskContext.getBuildContext().getBuildResult().getCustomBuildData().put("reportUrl", result.getScanUrl());
+            taskContext.getBuildContext().getBuildResult().getCustomBuildData().put("violationsCount", String.valueOf(result.getViolations()));
+            taskContext.getBuildContext().getBuildResult().getCustomBuildData().put("vulnerabilitiesCount", String.valueOf(result.getVulnerabilities()));
         } catch (Exception e) {
             if(onFailure.equals(PluginConstants.FAIL_THE_BUILD)){
                 StringBuilder errorMsg = new StringBuilder();
@@ -83,16 +91,17 @@ public class SoosSCATask implements TaskType {
             buildLogger.addBuildLogEntry(errorMsg.toString());
         }
 
+
         return TaskResultBuilder.newBuilder(taskContext).success().build();
     }
 
-        private String createReportMsg(String reportUrl, Mode mode) {
+        private String createReportMsg(AnalysisResultResponse resultResponse, Mode mode) {
             StringBuilder reportMsg = new StringBuilder();
             if ( StringUtils.equals(mode.getMode(), Mode.ASYNC_INIT.getMode()) ) {
                 reportMsg.append("Report status URL: \n");
-                reportMsg.append(reportUrl);
+                reportMsg.append(resultResponse.getScanStatusUrl());
             } else {
-                reportMsg.append("Open the following url to see the report: ").append(reportUrl);
+                reportMsg.append("Open the following url to see the report: ").append(resultResponse.getScanUrl());
             }
             return reportMsg.toString();
         }
@@ -181,4 +190,6 @@ public class SoosSCATask implements TaskType {
         return null;
     }
 
+
 }
+
