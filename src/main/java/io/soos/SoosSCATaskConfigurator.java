@@ -69,8 +69,8 @@ public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
     }
     private Map<String, String> getOnFailureOptions(){
         final Map<String, String> map = new LinkedHashMap<>();
-        map.put(OnFailure.FAIL_THE_BUILD.getValue(), OnFailure.FAIL_THE_BUILD.getName());
         map.put(OnFailure.CONTINUE_ON_FAILURE.getValue(), OnFailure.CONTINUE_ON_FAILURE.getName());
+        map.put(OnFailure.FAIL_THE_BUILD.getValue(), OnFailure.FAIL_THE_BUILD.getName());
         return map;
     }
     private Map<String, Object> populateComboList(){
