@@ -92,6 +92,7 @@ public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
         map.put(Constants.MAP_PARAM_MODE_KEY, getParamValue(object, Constants.MAP_PARAM_MODE_KEY));
         map.put(Constants.MAP_PARAM_DIRS_TO_EXCLUDE_KEY, getParamValue(object, Constants.MAP_PARAM_DIRS_TO_EXCLUDE_KEY));
         map.put(Constants.MAP_PARAM_FILES_TO_EXCLUDE_KEY, getParamValue(object, Constants.MAP_PARAM_FILES_TO_EXCLUDE_KEY));
+        map.put(Constants.MAP_PARAM_PACKAGE_MANAGERS_KEY, getParamValue(object, Constants.MAP_PARAM_PACKAGE_MANAGERS_KEY));
         map.put(Constants.MAP_PARAM_ON_FAILURE_KEY, getParamValue(object, Constants.MAP_PARAM_ON_FAILURE_KEY));
         map.put(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY, getParamValue(object, Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY));
         map.put(Constants.MAP_PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY, getParamValue(object, Constants.MAP_PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY));
