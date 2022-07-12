@@ -16,6 +16,9 @@
 [@ww.textfield label="Files To Exclude" name="filesToExclude" value=filesToExclude /]
 <label style="color: darkgray;font-size: 12px">Separate the file names with a comma</label>
 
+[@ww.textfield label="Package Managers to look for" name="packageManagers" value=packageManagers /]
+<label style="color: darkgray;font-size: 12px">Separate Package Manager names with a comma</label>
+
 [@ww.select label="On Failure" listKey="key" listValue="value" list=onFailureOptions name="onFailure" value=onFailure toggle=true /]
 
 [@ww.textfield label="Analysis Result Max Wait" name="analysisResultMaxWait" default=analysisResultMaxWait /]
