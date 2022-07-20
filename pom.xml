@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.soos</groupId>
     <artifactId>soos-sca</artifactId>
-    <version>1.0.6</version>
+    <version>1.0.7</version>
     <name>SOOS SCA</name>
     <description>Scan your open source software for vulnerabilities and control the introduction of new dependencies</description>
     <packaging>atlassian-plugin</packaging>

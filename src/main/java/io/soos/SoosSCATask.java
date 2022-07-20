@@ -118,7 +118,7 @@ public class SoosSCATask implements TaskType {
         map.put(Constants.PARAM_ON_FAILURE_KEY, params.get(Constants.MAP_PARAM_ON_FAILURE_KEY));
         map.put(Constants.PARAM_DIRS_TO_EXCLUDE_KEY, dirsToExclude);
         map.put(Constants.PARAM_FILES_TO_EXCLUDE_KEY, params.get(Constants.MAP_PARAM_FILES_TO_EXCLUDE_KEY));
-        map.put(Constants.PARAM_PACKAGE_MANAGERS_KEY, params.get(Constants.MAP_PARAM_PACKAGE_MANAGERS_KEY));
+        map.put(Constants.PARAM_PACKAGE_MANAGERS_KEY, params.getOrDefault(Constants.MAP_PARAM_PACKAGE_MANAGERS_KEY, ""));
         map.put(Constants.PARAM_WORKSPACE_DIR_KEY, workingDirectoryPath);
         map.put(Constants.PARAM_CHECKOUT_DIR_KEY, workingDirectoryPath);
         map.put(Constants.PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY, params.get(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY));
