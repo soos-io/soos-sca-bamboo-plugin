@@ -32,7 +32,7 @@ public class SoosSCATask implements TaskType {
         String onFailure = taskContext.getConfigurationMap().get(Constants.MAP_PARAM_ON_FAILURE_KEY);
         try {
             map.putAll(getEnvironmentVariable(taskContext));
-            setEnvProperties(map, buildLogger);
+            setEnvProperties(map);
             SOOS soos = new SOOS();
             soos.getContext().setScriptVersion(getVersionFromProperties());
             ScanResponse scan;
@@ -145,12 +145,9 @@ public class SoosSCATask implements TaskType {
         return map;
     }
 
-    private void setEnvProperties(Map<String, String> map, BuildLogger buildLogger){
-
+    private void setEnvProperties(Map<String, String> map){
         map.forEach((key, value) -> {
-            if(StringUtils.isNotBlank(value)) {
                 System.setProperty(key, value);
-            }
         });
     }
 
