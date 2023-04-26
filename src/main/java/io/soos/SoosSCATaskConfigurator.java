@@ -5,7 +5,6 @@ import com.atlassian.bamboo.task.AbstractTaskConfigurator;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import io.soos.commons.PluginConstants;
-import io.soos.domain.Mode;
 import io.soos.domain.OnFailure;
 import io.soos.integration.commons.Constants;
 import org.apache.commons.lang3.StringUtils;
@@ -60,13 +59,6 @@ public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
         Validation.validateParams(params, errorCollection);
     }
 
-    private Map<String, String> getModes(){
-        final Map<String, String> map = new LinkedHashMap<>();
-        map.put(Mode.RUN_AND_WAIT.getMode(), Mode.RUN_AND_WAIT.getName());
-        map.put(Mode.ASYNC_INIT.getMode(), Mode.ASYNC_INIT.getName());
-        map.put(Mode.ASYNC_RESULT.getMode(), Mode.ASYNC_RESULT.getName());
-        return map;
-    }
     private Map<String, String> getOnFailureOptions(){
         final Map<String, String> map = new LinkedHashMap<>();
         map.put(OnFailure.CONTINUE_ON_FAILURE.getValue(), OnFailure.CONTINUE_ON_FAILURE.getName());
@@ -75,7 +67,6 @@ public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
     }
     private Map<String, Object> populateComboList(){
         Map<String, Object> map = new HashMap<>();
-        map.put(PluginConstants.MODES, getModes());
         map.put(PluginConstants.ON_FAILURE_OPTIONS, getOnFailureOptions());
 
         return map;
@@ -89,7 +80,6 @@ public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
         map.put(Constants.MAP_PARAM_BRANCH_URI_KEY, getParamValue(object, Constants.MAP_PARAM_BRANCH_URI_KEY));
         map.put(Constants.MAP_PARAM_COMMIT_HASH_KEY, getParamValue(object, Constants.MAP_PARAM_COMMIT_HASH_KEY));
         map.put(Constants.MAP_PARAM_BUILD_URI_KEY, getParamValue(object, Constants.MAP_PARAM_BUILD_URI_KEY));
-        map.put(Constants.MAP_PARAM_MODE_KEY, getParamValue(object, Constants.MAP_PARAM_MODE_KEY));
         map.put(Constants.MAP_PARAM_DIRS_TO_EXCLUDE_KEY, getParamValue(object, Constants.MAP_PARAM_DIRS_TO_EXCLUDE_KEY));
         map.put(Constants.MAP_PARAM_FILES_TO_EXCLUDE_KEY, getParamValue(object, Constants.MAP_PARAM_FILES_TO_EXCLUDE_KEY));
         map.put(Constants.MAP_PARAM_PACKAGE_MANAGERS_KEY, getParamValue(object, Constants.MAP_PARAM_PACKAGE_MANAGERS_KEY));

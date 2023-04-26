@@ -6,14 +6,11 @@ import com.atlassian.bamboo.variable.VariableDefinitionContext;
 import io.soos.commons.PluginConstants;
 import io.soos.commons.Utils;
 import io.soos.integration.commons.Constants;
-import io.soos.integration.domain.Mode;
 import io.soos.integration.domain.SOOS;
 import io.soos.integration.domain.analysis.AnalysisResultResponse;
 import io.soos.integration.domain.scan.ScanResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -22,7 +19,6 @@ import java.util.Properties;
 
 
 public class SoosSCATask implements TaskType {
-    private final Logger LOG = LoggerFactory.getLogger(SoosSCATask.class);
 
     @NotNull
     @Override
@@ -31,50 +27,20 @@ public class SoosSCATask implements TaskType {
         Map<String, String> map = getTaskParameters(taskContext);
         String onFailure = taskContext.getConfigurationMap().get(Constants.MAP_PARAM_ON_FAILURE_KEY);
         try {
-            map.putAll(getEnvironmentVariable(taskContext));
+            map.putAll(getEnvironmentVariables(taskContext));
             setEnvProperties(map);
             SOOS soos = new SOOS();
-            soos.getContext().setScriptVersion(getVersionFromProperties());
+            soos.getContext().setScriptVersion(getVersionFromProperties(buildLogger));
             ScanResponse scan;
             AnalysisResultResponse result = null;
-            LOG.info("--------------------------------------------");
-            switch (soos.getMode()) {
-                case RUN_AND_WAIT:
-                    buildLogger.addBuildLogEntry(PluginConstants.RUN_AND_WAIT_MODE_SELECTED);
-                    LOG.info("Run and Wait Scan");
-                    LOG.info("--------------------------------------------");
-                    scan = soos.startAnalysis();
-                    LOG.info("Analysis request is running");
-                    result = soos.getResults(scan.getScanStatusUrl());
-                    buildLogger.addBuildLogEntry(createReportMsg(result, soos.getMode()));
-                    buildLogger.addBuildLogEntry("Vulnerabilities found: " + result.getVulnerabilities() + " Violations found: " + result.getViolations());
-                    LOG.info("Scan analysis finished successfully. To see the results go to: {}", result.getScanUrl());
-                    LOG.info("Vulnerabilities found: {}, Violations found: {}", result.getVulnerabilities(), result.getViolations());
-                    break;
-                case ASYNC_INIT:
-                    buildLogger.addBuildLogEntry(PluginConstants.ASYNC_INIT_MODE_SELECTED);
-                    LOG.info("Async Init Scan");
-                    LOG.info("--------------------------------------------");
-                    scan = soos.startAnalysis();
-                    Utils.saveReportStatusUrl(scan.getScanStatusUrl(), taskContext);
-                    buildLogger.addBuildLogEntry(createReportMsg(result, soos.getMode()));
-                    LOG.info("Analysis request is running, access the report status using this link: {}", scan.getScanStatusUrl());
-                    break;
-                case ASYNC_RESULT:
-                    String reportStatusUrl = Utils.getReportStatusUrl(taskContext,null);
-                    buildLogger.addBuildLogEntry(PluginConstants.ASYNC_RESULT_MODE_SELECTED);
-                    LOG.info("Async Result Scan");
-                    LOG.info("--------------------------------------------");
-                    LOG.info("Checking Scan Status from: {}", reportStatusUrl );
-                    result = soos.getResults(reportStatusUrl);
-                    buildLogger.addBuildLogEntry(createReportMsg(result, soos.getMode()));
-                    buildLogger.addBuildLogEntry("Vulnerabilities found: " + result.getVulnerabilities() + " Violations found: " + result.getViolations());
-                    LOG.info("Scan analysis finished successfully. To see the results go to: {}", result.getScanUrl());
-                    LOG.info("Vulnerabilities found: {}, Violations found: {}", result.getVulnerabilities(), result.getViolations());
-                    break;
-                default:
-                    throw new Exception("Invalid SCA Mode");
-            }
+            buildLogger.addBuildLogEntry("--------------------------------------------");
+            buildLogger.addBuildLogEntry("Run SOOS SCA Scan");
+            buildLogger.addBuildLogEntry("--------------------------------------------");
+            scan = soos.startAnalysis();
+            buildLogger.addBuildLogEntry("Analysis request is running");
+            result = soos.getResults(scan.getScanStatusUrl());
+            buildLogger.addBuildLogEntry("Scan analysis finished successfully. To see the results go to: " + result.getScanUrl());
+            buildLogger.addBuildLogEntry("Vulnerabilities found: " + result.getVulnerabilities() + ", Violations found: " + result.getViolations());
             taskContext.getBuildContext().getBuildResult().getCustomBuildData().put("isSOOSSCAScanTask", "true");
             taskContext.getBuildContext().getBuildResult().getCustomBuildData().put("reportUrl", result.getScanUrl());
             taskContext.getBuildContext().getBuildResult().getCustomBuildData().put("violationsCount", String.valueOf(result.getViolations()));
@@ -95,26 +61,14 @@ public class SoosSCATask implements TaskType {
         return TaskResultBuilder.newBuilder(taskContext).success().build();
     }
 
-        private String createReportMsg(AnalysisResultResponse resultResponse, Mode mode) {
-            StringBuilder reportMsg = new StringBuilder();
-            if ( StringUtils.equals(mode.getMode(), Mode.ASYNC_INIT.getMode()) ) {
-                reportMsg.append("Report status URL: \n");
-                reportMsg.append(resultResponse.getScanStatusUrl());
-            } else {
-                reportMsg.append("Open the following url to see the report: ").append(resultResponse.getScanUrl());
-            }
-            return reportMsg.toString();
-        }
-
     private Map<String, String> getTaskParameters(TaskContext taskContext){
         Map<String, String> map = new HashMap<>();
 
         Map<String, String> params = taskContext.getConfigurationMap();
         String workingDirectoryPath = taskContext.getWorkingDirectory().getPath();
 
-        String dirsToExclude = addSoosDirToExclusion(taskContext.getConfigurationMap().get(Constants.MAP_PARAM_DIRS_TO_EXCLUDE_KEY));
+        String dirsToExclude = addSoosDirToExclusion(params.get(Constants.MAP_PARAM_DIRS_TO_EXCLUDE_KEY));
         map.put(Constants.PARAM_PROJECT_NAME_KEY, params.get(Constants.MAP_PARAM_PROJECT_NAME_KEY));
-        map.put(Constants.PARAM_MODE_KEY, params.get(Constants.MAP_PARAM_MODE_KEY));
         map.put(Constants.PARAM_ON_FAILURE_KEY, params.get(Constants.MAP_PARAM_ON_FAILURE_KEY));
         map.put(Constants.PARAM_DIRS_TO_EXCLUDE_KEY, dirsToExclude);
         map.put(Constants.PARAM_FILES_TO_EXCLUDE_KEY, params.get(Constants.MAP_PARAM_FILES_TO_EXCLUDE_KEY));
@@ -162,7 +116,7 @@ public class SoosSCATask implements TaskType {
         return PluginConstants.SOOS_DIR_NAME;
     }
 
-    private Map<String, String> getEnvironmentVariable(TaskContext taskContext) throws Exception {
+    private Map<String, String> getEnvironmentVariables(TaskContext taskContext) throws Exception {
         Map<String, String> map = new HashMap<>();
 
         final VariableDefinitionContext clientId = Utils.getVariable(taskContext, PluginConstants.SOOS_CLIENT_ID);
@@ -176,14 +130,14 @@ public class SoosSCATask implements TaskType {
         return map;
     }
 
-    private String getVersionFromProperties(){
+    private String getVersionFromProperties(BuildLogger buildLogger){
         Properties prop = new Properties();
         try {
             prop.load(this.getClass().getResourceAsStream(PluginConstants.PROPERTIES_FILE));
             return prop.getProperty(PluginConstants.VERSION);
         } catch (IOException e) {
-            StringBuilder error = new StringBuilder("Cannot read file ").append("'").append(PluginConstants.PROPERTIES_FILE).append("'");
-            LOG.error(error.toString(), e);
+            String error = "Cannot read file '" + PluginConstants.PROPERTIES_FILE + "'";
+            buildLogger.addErrorLogEntry(error);
         }
         return null;
     }

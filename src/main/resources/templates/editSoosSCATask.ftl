@@ -8,8 +8,6 @@
 
 [@ww.textfield label="Build URI" name="buildURI" value=buildURI /]
 
-[@ww.select label="Mode" listKey="key" listValue="value" list=modes name="mode" value=mode toggle=true /]
-
 [@ww.textfield label="Directories To Exclude" name="dirsToExclude" value=dirsToExclude /]
 <label style="color: darkgray;font-size: 12px">Separate the directory names with a comma</label>
 
