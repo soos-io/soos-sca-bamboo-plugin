@@ -4,14 +4,8 @@ import com.atlassian.bamboo.collections.ActionParametersMap;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import io.soos.commons.ErrorMessage;
 import io.soos.commons.PluginConstants;
-import io.soos.domain.Mode;
-import io.soos.domain.OnFailure;
-import io.soos.domain.OperatingEnvironment;
 import io.soos.integration.commons.Constants;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-
-import java.util.Arrays;
 
 public class Validation {
 
