@@ -1,8 +1,26 @@
 package io.soos;
 
 import com.atlassian.bamboo.build.logger.BuildLogger;
+import com.atlassian.bamboo.chains.ChainExecution;
+import com.atlassian.bamboo.plan.Plan;
+import com.atlassian.bamboo.plan.PlanExecutionManager;
+import com.atlassian.bamboo.plan.PlanManager;
+import com.atlassian.bamboo.plan.PlanResultKey;
+import com.atlassian.bamboo.plan.cache.ImmutablePlan;
+import com.atlassian.bamboo.resultsummary.BuildResultsSummary;
+import com.atlassian.bamboo.resultsummary.ResultsSummary;
+import com.atlassian.bamboo.resultsummary.ResultsSummaryManager;
 import com.atlassian.bamboo.task.*;
+import com.atlassian.bamboo.v2.build.BuildContext;
+import com.atlassian.bamboo.v2.build.trigger.ManualBuildTriggerReason;
+import com.atlassian.bamboo.v2.build.trigger.TriggerReason;
+import com.atlassian.bamboo.variable.VariableContext;
+import com.atlassian.bamboo.variable.VariableDefinition;
 import com.atlassian.bamboo.variable.VariableDefinitionContext;
+import com.atlassian.bamboo.variable.VariableSubstitutionContext;
+import com.atlassian.crowd.model.authentication.Session;
+import com.atlassian.sal.api.component.ComponentLocator;
+import com.atlassian.user.impl.hibernate3.configuration.HibernateAccessor;
 import io.soos.commons.PluginConstants;
 import io.soos.commons.Utils;
 import io.soos.integration.commons.Constants;
@@ -10,12 +28,12 @@ import io.soos.integration.domain.SOOS;
 import io.soos.integration.domain.analysis.AnalysisResultResponse;
 import io.soos.integration.domain.scan.ScanResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.HibernateException;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.orm.hibernate5.HibernateCallback;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 
 public class SoosSCATask implements TaskType {
@@ -32,6 +50,94 @@ public class SoosSCATask implements TaskType {
             SOOS soos = new SOOS();
             soos.getContext().setScriptVersion(getVersionFromProperties(buildLogger));
             ScanResponse scan;
+            Map<String, String> customData = taskContext.getBuildContext().getBuildResult().getCustomBuildData();
+
+            buildLogger.addBuildLogEntry("---------- Custom Build Data ----------");
+
+            for (Map.Entry<String, String> entry : customData.entrySet()) {
+                buildLogger.addBuildLogEntry("Key: " + entry.getKey() + ", Value: " + entry.getValue());
+            }
+
+            VariableContext variableContext = taskContext.getBuildContext().getVariableContext();
+            VariableDefinitionContext manualTriggerReason = variableContext.getEffectiveVariables().get("bamboo_ManualBuildTriggerReason_userName");
+            BuildContext buildContext = taskContext.getBuildContext();
+            PlanManager planManager = ComponentLocator.getComponent(PlanManager.class);
+            PlanResultKey planResultKey = taskContext.getBuildContext().getPlanResultKey();
+            Plan plan = planManager.getPlanByKey(planResultKey.getPlanKey());
+
+            ResultsSummaryManager resultsSummaryManager = ComponentLocator.getComponent(ResultsSummaryManager.class);
+            ImmutablePlan immutablePlan = planManager.getPlanByKey(planResultKey.getPlanKey());
+
+            List<BuildResultsSummary> summaries = resultsSummaryManager.getResultSummariesForPlan(immutablePlan, 0, 100);
+            try {
+                if (summaries != null && !summaries.isEmpty()) {
+                    // Sorting to get the latest build summary.
+                    BuildResultsSummary latestSummary = Collections.max(summaries, Comparator.comparing(BuildResultsSummary::getBuildDate));
+
+                    if (latestSummary != null) {
+                        var test = latestSummary.getShortReasonSummary();
+                        var test2 = latestSummary.getChangesListSummary();
+                        var test3 = latestSummary.getReasonSummary();
+                        TriggerReason triggerReason = latestSummary.getTriggerReason();
+                        if (triggerReason != null) {
+                            // This will give you a string description of the reason.
+                            String reasonDescription = triggerReason.getName();
+
+                            // If it's a manual trigger, you can get more details.
+                            if (triggerReason instanceof ManualBuildTriggerReason) {
+                                String username = ((ManualBuildTriggerReason) triggerReason).getUserName();
+                                taskContext.getBuildLogger().addBuildLogEntry("username" +
+                                        username);
+                            }
+                        }
+                    }
+                }
+            }catch (Exception ex){
+                buildLogger.addBuildLogEntry("error:" + ex.getMessage());
+            }
+
+            List<VariableDefinition> variablesPlan = plan.getVariables();
+            for (var entry : variablesPlan) {
+                taskContext.getBuildLogger().addBuildLogEntry("variablesPlan Name Result: " + entry.getKey() + ", Value: " + entry.getValue());
+            }
+
+            Map<String, VariableDefinitionContext> variables = variableContext.getResultVariables();
+            for (Map.Entry<String, VariableDefinitionContext> entry : variables.entrySet()) {
+                String variableName = entry.getKey();
+                String variableValue = entry.getValue().getValue(); // Extract the actual value from the VariableDefinitionContext
+                taskContext.getBuildLogger().addBuildLogEntry("Variable Name Result: " + variableName + ", Value: " + variableValue);
+            }
+
+            Map<String, VariableDefinitionContext> variables2 = variableContext.getEffectiveVariables();
+            for (Map.Entry<String, VariableDefinitionContext> entry : variables2.entrySet()) {
+                String variableName = entry.getKey();
+                String variableValue = entry.getValue().getValue(); // Extract the actual value from the VariableDefinitionContext
+                taskContext.getBuildLogger().addBuildLogEntry("Variable Name Effective: " + variableName + ", Value: " + variableValue);
+            }
+
+            Map<String, VariableDefinitionContext> variables3 = variableContext.getOriginalVariables();
+            for (Map.Entry<String, VariableDefinitionContext> entry : variables3.entrySet()) {
+                String variableName = entry.getKey();
+                String variableValue = entry.getValue().getValue(); // Extract the actual value from the VariableDefinitionContext
+                taskContext.getBuildLogger().addBuildLogEntry("Variable Name Original: " + variableName + ", Value: " + variableValue);
+            }
+
+            Map<String, VariableSubstitutionContext> variables4 = variableContext.getSubstitutions();
+            for (Map.Entry<String, VariableSubstitutionContext> entry : variables4.entrySet()) {
+                String variableName = entry.getKey();
+                String variableValue = entry.getValue().getValue(); // Extract the actual value from the VariableDefinitionContext
+                taskContext.getBuildLogger().addBuildLogEntry("Variable Name Substitution: " + variableName + ", Value: " + variableValue);
+            }
+
+            if (manualTriggerReason != null) {
+                String userName = manualTriggerReason.getValue();
+                buildLogger.addBuildLogEntry("Username of who triggered pipeline" + userName);
+            }
+
+
+            buildLogger.addBuildLogEntry("---------------------------------------");
+
+            buildLogger.addBuildLogEntry("--------------------------------------------");
             AnalysisResultResponse result = null;
             buildLogger.addBuildLogEntry("--------------------------------------------");
             buildLogger.addBuildLogEntry("Run SOOS SCA Scan");
