@@ -16,19 +16,17 @@ public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
 
     @NotNull
     @Override
-    public Map<String, String> generateTaskConfigMap(@NotNull final ActionParametersMap params, @Nullable final TaskDefinition previousTaskDefinition)
-    {
+    public Map<String, String> generateTaskConfigMap(@NotNull final ActionParametersMap params, @Nullable final TaskDefinition previousTaskDefinition) {
         final Map<String, String> config = super.generateTaskConfigMap(params, previousTaskDefinition);
 
         Map<String, Object> map = getParams(params);
-        map.forEach( (k, v) -> config.put(k, (String) v) );
+        map.forEach((k, v) -> config.put(k, (String) v));
 
         return config;
     }
 
     @Override
-    public void populateContextForCreate(@NotNull final Map<String, Object> context)
-    {
+    public void populateContextForCreate(@NotNull final Map<String, Object> context) {
         super.populateContextForCreate(context);
         context.putAll(populateComboList());
 
@@ -45,11 +43,11 @@ public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
     }
 
     @Override
-    public void validate(@NotNull final ActionParametersMap params, @NotNull final ErrorCollection errorCollection){
+    public void validate(@NotNull final ActionParametersMap params, @NotNull final ErrorCollection errorCollection) {
         super.validate(params, errorCollection);
     }
 
-    private Map<String, String> getOnFailureOptions(){
+    private Map<String, String> getOnFailureOptions() {
         final Map<String, String> map = new LinkedHashMap<>();
         for (Enums.OnFailure onFailure : Enums.OnFailure.values()) {
             map.put(onFailure.name(), onFailure.name());
@@ -57,7 +55,7 @@ public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
         return map;
     }
 
-    private Map<String, String> getLogLevelOptions(){
+    private Map<String, String> getLogLevelOptions() {
         final Map<String, String> map = new LinkedHashMap<>();
         for (Enums.LogLevel logLevel : Enums.LogLevel.values()) {
             map.put(logLevel.name(), logLevel.name());
@@ -66,7 +64,7 @@ public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
     }
 
 
-    private Map<String, Object> populateComboList(){
+    private Map<String, Object> populateComboList() {
         Map<String, Object> map = new HashMap<>();
         map.put("onFailureOptions", getOnFailureOptions());
         map.put("logLevelOptions", getLogLevelOptions());
@@ -74,7 +72,7 @@ public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
         return map;
     }
 
-    private <T> Map<String, Object> getParams(T object){
+    private <T> Map<String, Object> getParams(T object) {
         Map<String, Object> map = new HashMap<>();
         map.put("projectName", getParamValue(object, "projectName"));
         map.put("dirsToExclude", getParamValue(object, "dirsToExclude"));
@@ -83,16 +81,16 @@ public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
         map.put("onFailure", getParamValue(object, "onFailure"));
         map.put("apiURL", getParamValue(object, "apiURL"));
         map.put("logLevel", getParamValue(object, "logLevel"));
-        map.put("verboseLogging", getParamValue(object, "verboseLogging"));
+        map.put("verbose", getParamValue(object, "verbose"));
         map.put("outputFormat", getParamValue(object, "outputFormat"));
         map.put("nodePath", getParamValue(object, "nodePath"));
 
         return map;
     }
 
-    private <T> String getParamValue(T object, String param){
+    private <T> String getParamValue(T object, String param) {
         String value;
-        if(object instanceof TaskDefinition){
+        if (object instanceof TaskDefinition) {
             TaskDefinition taskDefinition = (TaskDefinition) object;
             Map<String, String> objectMap = taskDefinition.getConfiguration();
             value = objectMap.get(param);

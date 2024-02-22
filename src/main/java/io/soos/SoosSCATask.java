@@ -26,20 +26,20 @@ public class SoosSCATask implements TaskType {
             Map<String, String> parameters = gatherParameters(taskContext);
             Configuration configuration = setupConfiguration(parameters);
 
-            PrintStream printStream =  createLoggingPrintStream(buildLogger);
-            SoosScaWrapper soosScaWrapper = new SoosScaWrapper(configuration,printStream);
+            PrintStream printStream = createLoggingPrintStream(buildLogger);
+            SoosScaWrapper soosScaWrapper = new SoosScaWrapper(configuration, printStream);
             int exitCode = soosScaWrapper.runSca();
 
-            if(exitCode != 0 ){
-                if(configuration.getOnFailure().equalsIgnoreCase(Enums.OnFailure.FAIL_THE_BUILD.toString())){
+            if (exitCode != 0) {
+                if (configuration.getOnFailure().equalsIgnoreCase(Enums.OnFailure.FAIL_THE_BUILD.toString())) {
                     return TaskResultBuilder.newBuilder(taskContext).failed().build();
-                } else if(configuration.getOnFailure().equalsIgnoreCase(Enums.OnFailure.CONTINUE_ON_FAILURE.toString())){
+                } else if (configuration.getOnFailure().equalsIgnoreCase(Enums.OnFailure.CONTINUE_ON_FAILURE.toString())) {
                     return TaskResultBuilder.newBuilder(taskContext).success().build();
                 }
             }
 
         } catch (Exception e) {
-            buildLogger.addBuildLogEntry("SOOS SCA cannot be done, error: " + e);
+            buildLogger.addBuildLogEntry("SOOS SCA encountered an error: " + e);
         }
 
         return TaskResultBuilder.newBuilder(taskContext).success().build();
@@ -57,7 +57,6 @@ public class SoosSCATask implements TaskType {
         setConfigurationProperties(parameters, configuration);
         return configuration;
     }
-
 
     private PrintStream createLoggingPrintStream(final BuildLogger buildLogger) {
         return new PrintStream(new OutputStream() {
@@ -94,7 +93,7 @@ public class SoosSCATask implements TaskType {
         }
     }
 
-    private Map<String, String> getTaskParameters(TaskContext taskContext){
+    private Map<String, String> getTaskParameters(TaskContext taskContext) {
         Map<String, String> map = new HashMap<>(taskContext.getConfigurationMap());
         String workingDirectoryPath = taskContext.getWorkingDirectory().getPath();
         map.put("workingDirectory", workingDirectoryPath);
@@ -108,7 +107,7 @@ public class SoosSCATask implements TaskType {
         return map;
     }
 
-    private void setEnvProperties(Map<String, String> map){
+    private void setEnvProperties(Map<String, String> map) {
         map.forEach(System::setProperty);
     }
 
@@ -116,11 +115,11 @@ public class SoosSCATask implements TaskType {
         Map<String, String> map = new HashMap<>();
         final VariableDefinitionContext clientId = Utils.getVariable(taskContext, PluginConstants.SOOS_CLIENT_ID);
         final VariableDefinitionContext apiKey = Utils.getVariable(taskContext, PluginConstants.SOOS_API_KEY);
-        if(clientId == null || apiKey == null){
+        if (clientId == null || apiKey == null) {
             throw new Exception("There was an issue retrieving your Client ID and API Key, make sure you have them set up on your global variables.");
         }
-        map.put("clientId",clientId.getValue());
-        map.put("apiKey",apiKey.getValue());
+        map.put("clientId", clientId.getValue());
+        map.put("apiKey", apiKey.getValue());
 
         return map;
     }

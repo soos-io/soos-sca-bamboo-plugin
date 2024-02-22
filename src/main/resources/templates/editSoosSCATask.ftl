@@ -15,7 +15,7 @@
 
 [@ww.select label="Log Level" listKey="key" listValue="value" list=logLevelOptions name="logLevel" value=logLevel /]
 
-[@ww.checkbox label="Verbose Logging" name="verboseLogging" value=verbose /]
+[@ww.checkbox label="Verbose Logging" name="verbose" value=verbose /]
 
 [@ww.textfield label="Output Format" name="outputFormat" value=outputFormat /]
 
