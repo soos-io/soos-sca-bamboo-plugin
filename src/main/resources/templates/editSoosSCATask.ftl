@@ -1,6 +1,6 @@
 [@ww.textfield label="Project Name" name="projectName" value=projectName required='true'/]
 
-[@ww.textfield label="Directories To Exclude" name="dirsToExclude" value=dirsToExclude /]
+[@ww.textfield label="Directories To Exclude" name="directoriesToExclude" value=directoriesToExclude /]
 <label style="color: darkgray;font-size: 12px">Separate the directory names with a comma</label>
 
 [@ww.textfield label="Files To Exclude" name="filesToExclude" value=filesToExclude /]

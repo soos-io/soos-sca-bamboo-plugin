@@ -75,7 +75,7 @@ public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
     private <T> Map<String, Object> getParams(T object) {
         Map<String, Object> map = new HashMap<>();
         map.put("projectName", getParamValue(object, "projectName"));
-        map.put("dirsToExclude", getParamValue(object, "dirsToExclude"));
+        map.put("directoriesToExclude", getParamValue(object, "directoriesToExclude"));
         map.put("filesToExclude", getParamValue(object, "filesToExclude"));
         map.put("packageManagers", getParamValue(object, "packageManagers"));
         map.put("onFailure", getParamValue(object, "onFailure"));
