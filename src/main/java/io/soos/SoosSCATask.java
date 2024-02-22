@@ -5,17 +5,15 @@ import com.atlassian.bamboo.task.*;
 import com.atlassian.bamboo.variable.VariableDefinitionContext;
 import io.soos.commons.PluginConstants;
 import io.soos.commons.Utils;
-import io.soos.integration.commons.Constants;
-import io.soos.integration.domain.SOOS;
-import io.soos.integration.domain.analysis.AnalysisResultResponse;
-import io.soos.integration.domain.scan.ScanResponse;
-import org.apache.commons.lang3.StringUtils;
+import io.soos.integration.Configuration;
+import io.soos.integration.Enums;
+import io.soos.integration.SoosScaWrapper;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
+import java.io.*;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 
 public class SoosSCATask implements TaskType {
@@ -24,124 +22,108 @@ public class SoosSCATask implements TaskType {
     @Override
     public TaskResult execute(@NotNull TaskContext taskContext) throws TaskException {
         final BuildLogger buildLogger = taskContext.getBuildLogger();
-        Map<String, String> map = getTaskParameters(taskContext);
-        String onFailure = taskContext.getConfigurationMap().get(Constants.MAP_PARAM_ON_FAILURE_KEY);
         try {
-            map.putAll(getEnvironmentVariables(taskContext));
-            setEnvProperties(map);
-            SOOS soos = new SOOS();
-            soos.getContext().setScriptVersion(getVersionFromProperties(buildLogger));
-            ScanResponse scan;
-            AnalysisResultResponse result = null;
-            buildLogger.addBuildLogEntry("--------------------------------------------");
-            buildLogger.addBuildLogEntry("Run SOOS SCA Scan");
-            buildLogger.addBuildLogEntry("--------------------------------------------");
-            scan = soos.startAnalysis();
-            buildLogger.addBuildLogEntry("Analysis request is running");
-            result = soos.getResults(scan.getScanStatusUrl());
-            buildLogger.addBuildLogEntry("Scan analysis finished successfully. To see the results go to: " + result.getScanUrl());
-            buildLogger.addBuildLogEntry("Vulnerabilities found: " + result.getVulnerabilities() + ", Violations found: " + result.getViolations());
-            taskContext.getBuildContext().getBuildResult().getCustomBuildData().put("isSOOSSCAScanTask", "true");
-            taskContext.getBuildContext().getBuildResult().getCustomBuildData().put("reportUrl", result.getScanUrl());
-            taskContext.getBuildContext().getBuildResult().getCustomBuildData().put("violationsCount", String.valueOf(result.getViolations()));
-            taskContext.getBuildContext().getBuildResult().getCustomBuildData().put("vulnerabilitiesCount", String.valueOf(result.getVulnerabilities()));
-        } catch (Exception e) {
-            if(onFailure.equals(PluginConstants.FAIL_THE_BUILD)){
-                StringBuilder errorMsg = new StringBuilder();
-                errorMsg.append("SOOS SCA cannot be done, error: ").append(e).append("- the build has failed!");
-                buildLogger.addErrorLogEntry(errorMsg.toString());
-                return TaskResultBuilder.newBuilder(taskContext).failed().build();
-            }
-            StringBuilder errorMsg = new StringBuilder();
-            errorMsg.append("SOOS SCA cannot be done, error: ").append(e).append("- Continuing the build... ");
-            buildLogger.addBuildLogEntry(errorMsg.toString());
-        }
+            Map<String, String> parameters = gatherParameters(taskContext);
+            Configuration configuration = setupConfiguration(parameters);
 
+            PrintStream printStream =  createLoggingPrintStream(buildLogger);
+            SoosScaWrapper soosScaWrapper = new SoosScaWrapper(configuration,printStream);
+            int exitCode = soosScaWrapper.runSca();
+
+            if(exitCode != 0 ){
+                if(configuration.getOnFailure().equalsIgnoreCase(Enums.OnFailure.FAIL_THE_BUILD.toString())){
+                    return TaskResultBuilder.newBuilder(taskContext).failed().build();
+                } else if(configuration.getOnFailure().equalsIgnoreCase(Enums.OnFailure.CONTINUE_ON_FAILURE.toString())){
+                    return TaskResultBuilder.newBuilder(taskContext).success().build();
+                }
+            }
+
+        } catch (Exception e) {
+            buildLogger.addBuildLogEntry("SOOS SCA cannot be done, error: " + e);
+        }
 
         return TaskResultBuilder.newBuilder(taskContext).success().build();
     }
 
+    private Map<String, String> gatherParameters(TaskContext taskContext) throws Exception {
+        Map<String, String> params = new HashMap<>(getTaskParameters(taskContext));
+        params.putAll(getEnvironmentVariables(taskContext));
+        setEnvProperties(params);
+        return params;
+    }
+
+    private Configuration setupConfiguration(Map<String, String> parameters) {
+        Configuration configuration = new Configuration();
+        setConfigurationProperties(parameters, configuration);
+        return configuration;
+    }
+
+
+    private PrintStream createLoggingPrintStream(final BuildLogger buildLogger) {
+        return new PrintStream(new OutputStream() {
+            private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
+            @Override
+            public void write(int b) throws IOException {
+                buffer.write(b);
+                if (b == '\n') {
+                    buildLogger.addBuildLogEntry(buffer.toString("UTF-8"));
+                    buffer.reset();
+                }
+            }
+        });
+    }
+
+    private void setConfigurationProperties(Map<String, String> map, Configuration configuration) {
+        Class<?> configClass = configuration.getClass();
+        for (Field field : configClass.getDeclaredFields()) {
+            field.setAccessible(true);
+            String fieldName = field.getName();
+            String value = map.get(fieldName);
+            if (map.containsKey(fieldName)) {
+                try {
+                    if (field.getType().equals(boolean.class)) {
+                        field.setBoolean(configuration, Boolean.parseBoolean(value));
+                    } else {
+                        field.set(configuration, value);
+                    }
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
     private Map<String, String> getTaskParameters(TaskContext taskContext){
-        Map<String, String> map = new HashMap<>();
-
-        Map<String, String> params = taskContext.getConfigurationMap();
+        Map<String, String> map = new HashMap<>(taskContext.getConfigurationMap());
         String workingDirectoryPath = taskContext.getWorkingDirectory().getPath();
+        map.put("workingDirectory", workingDirectoryPath);
+        map.put("sourceCodePath", workingDirectoryPath);
+        map.put("integrationName", PluginConstants.INTEGRATION_NAME);
 
-        String dirsToExclude = addSoosDirToExclusion(params.get(Constants.MAP_PARAM_DIRS_TO_EXCLUDE_KEY));
-        map.put(Constants.PARAM_PROJECT_NAME_KEY, params.get(Constants.MAP_PARAM_PROJECT_NAME_KEY));
-        map.put(Constants.PARAM_ON_FAILURE_KEY, params.get(Constants.MAP_PARAM_ON_FAILURE_KEY));
-        map.put(Constants.PARAM_DIRS_TO_EXCLUDE_KEY, dirsToExclude);
-        map.put(Constants.PARAM_FILES_TO_EXCLUDE_KEY, params.get(Constants.MAP_PARAM_FILES_TO_EXCLUDE_KEY));
-        map.put(Constants.PARAM_PACKAGE_MANAGERS_KEY, params.getOrDefault(Constants.MAP_PARAM_PACKAGE_MANAGERS_KEY, ""));
-        map.put(Constants.PARAM_WORKSPACE_DIR_KEY, workingDirectoryPath);
-        map.put(Constants.PARAM_CHECKOUT_DIR_KEY, workingDirectoryPath);
-        map.put(Constants.PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY, params.get(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY));
-        map.put(Constants.PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY, params.get(Constants.MAP_PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY));
-        map.put(Constants.PARAM_API_BASE_URI_KEY, params.get(Constants.MAP_PARAM_API_BASE_URI_KEY));
-        map.put(Constants.PARAM_OPERATING_ENVIRONMENT_KEY, Utils.getOperatingSystem());
-        map.put(Constants.PARAM_BRANCH_NAME_KEY, params.get(Constants.MAP_PARAM_BRANCH_NAME_KEY));
-        map.put(Constants.PARAM_BRANCH_URI_KEY, params.get(Constants.MAP_PARAM_BRANCH_URI_KEY));
-        map.put(Constants.PARAM_COMMIT_HASH_KEY, params.get(Constants.MAP_PARAM_COMMIT_HASH_KEY));
-        map.put(Constants.PARAM_BUILD_VERSION_KEY, String.valueOf(taskContext.getBuildContext().getBuildNumber()));
-        map.put(Constants.PARAM_BUILD_URI_KEY, params.get(Constants.MAP_PARAM_BUILD_URI_KEY));
-        map.put(Constants.PARAM_INTEGRATION_NAME_KEY, PluginConstants.INTEGRATION_NAME);
+        if (map.get("projectName") == null || map.get("projectName").isEmpty()) {
+            map.put("projectName", taskContext.getBuildContext().getPlanName());
+        }
 
-
-        if(StringUtils.isBlank(params.get(Constants.MAP_PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY))) {
-            map.put(Constants.PARAM_ANALYSIS_RESULT_MAX_WAIT_KEY, String.valueOf(Constants.MIN_RECOMMENDED_ANALYSIS_RESULT_MAX_WAIT));
-        }
-        if(StringUtils.isBlank(params.get(Constants.MAP_PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY))) {
-            map.put(Constants.PARAM_ANALYSIS_RESULT_POLLING_INTERVAL_KEY, String.valueOf(Constants.MIN_ANALYSIS_RESULT_POLLING_INTERVAL));
-        }
-        if(StringUtils.isBlank(params.get(Constants.MAP_PARAM_API_BASE_URI_KEY))){
-            map.put(Constants.PARAM_API_BASE_URI_KEY, Constants.SOOS_DEFAULT_API_URL);
-        }
         return map;
     }
 
     private void setEnvProperties(Map<String, String> map){
-        map.forEach((key, value) -> {
-                System.setProperty(key, value);
-        });
-    }
-
-    private String addSoosDirToExclusion(String dirs){
-        if(StringUtils.isNotBlank(dirs)){
-            StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append(dirs).append(",").append(PluginConstants.SOOS_DIR_NAME);
-
-            return stringBuilder.toString();
-        }
-
-        return PluginConstants.SOOS_DIR_NAME;
+        map.forEach(System::setProperty);
     }
 
     private Map<String, String> getEnvironmentVariables(TaskContext taskContext) throws Exception {
         Map<String, String> map = new HashMap<>();
-
         final VariableDefinitionContext clientId = Utils.getVariable(taskContext, PluginConstants.SOOS_CLIENT_ID);
         final VariableDefinitionContext apiKey = Utils.getVariable(taskContext, PluginConstants.SOOS_API_KEY);
         if(clientId == null || apiKey == null){
             throw new Exception("There was an issue retrieving your Client ID and API Key, make sure you have them set up on your global variables.");
         }
-        map.put(PluginConstants.SOOS_CLIENT_ID,clientId.getValue());
-        map.put(PluginConstants.SOOS_API_KEY,apiKey.getValue());
+        map.put("clientId",clientId.getValue());
+        map.put("apiKey",apiKey.getValue());
 
         return map;
     }
-
-    private String getVersionFromProperties(BuildLogger buildLogger){
-        Properties prop = new Properties();
-        try {
-            prop.load(this.getClass().getResourceAsStream(PluginConstants.PROPERTIES_FILE));
-            return prop.getProperty(PluginConstants.VERSION);
-        } catch (IOException e) {
-            String error = "Cannot read file '" + PluginConstants.PROPERTIES_FILE + "'";
-            buildLogger.addErrorLogEntry(error);
-        }
-        return null;
-    }
-
 
 }
 

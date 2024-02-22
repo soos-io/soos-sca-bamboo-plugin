@@ -12,19 +12,4 @@
         <resource type="freemarker" name="edit" location="templates/editSoosSCATask.ftl"/>
         <resource type="download" name="icon" location="images/SOOS_Icon.png"/>
     </taskType>
-    <!-- SOOS SCA Report Tab -->
-    <xwork key="soosSCAResultTab" name="View SOOS SCA Reports">
-        <package name="resultTabView" extends="buildResultView">
-            <action name="resultTabView" class="io.soos.ui.ResultTabView">
-                <result name="success" type="freemarker">/templates/resultTab.ftl</result>
-            </action>
-        </package>
-    </xwork>
-    <!-- Build Report -->
-    <web-item name="soosSCAJobPage" key="soosSCAJobReport" section="chainResults.subMenu/chainResults" weight="80">
-        <description key="soosTabDescription">Display SOOS SCA Report Tab</description>
-        <label key="SOOS SCA Results" />
-        <link linkId="soosSCAJobReport">/build/result/resultTabView.action?buildKey=${buildKey}&amp;buildNumber=${buildNumber}</link>
-        <condition class="io.soos.ui.ResultTabCondition" />
-    </web-item>
 </atlassian-plugin>
