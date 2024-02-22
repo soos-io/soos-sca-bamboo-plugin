@@ -5,6 +5,7 @@ import com.atlassian.bamboo.task.AbstractTaskConfigurator;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import io.soos.integration.Enums;
+import io.soos.integration.SoosScaParameters;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -74,16 +75,16 @@ public class SoosSCATaskConfigurator extends AbstractTaskConfigurator {
 
     private <T> Map<String, Object> getParams(T object) {
         Map<String, Object> map = new HashMap<>();
-        map.put("projectName", getParamValue(object, "projectName"));
-        map.put("directoriesToExclude", getParamValue(object, "directoriesToExclude"));
-        map.put("filesToExclude", getParamValue(object, "filesToExclude"));
-        map.put("packageManagers", getParamValue(object, "packageManagers"));
-        map.put("onFailure", getParamValue(object, "onFailure"));
-        map.put("apiURL", getParamValue(object, "apiURL"));
-        map.put("logLevel", getParamValue(object, "logLevel"));
-        map.put("verbose", getParamValue(object, "verbose"));
-        map.put("outputFormat", getParamValue(object, "outputFormat"));
-        map.put("nodePath", getParamValue(object, "nodePath"));
+        map.put(SoosScaParameters.PROJECT_NAME, getParamValue(object, SoosScaParameters.PROJECT_NAME));
+        map.put(SoosScaParameters.DIRECTORIES_TO_EXCLUDE, getParamValue(object, SoosScaParameters.DIRECTORIES_TO_EXCLUDE));
+        map.put(SoosScaParameters.FILES_TO_EXCLUDE, getParamValue(object, SoosScaParameters.FILES_TO_EXCLUDE));
+        map.put(SoosScaParameters.PACKAGE_MANAGERS, getParamValue(object, SoosScaParameters.PACKAGE_MANAGERS));
+        map.put(SoosScaParameters.ON_FAILURE, getParamValue(object, SoosScaParameters.ON_FAILURE));
+        map.put(SoosScaParameters.API_URL, getParamValue(object, SoosScaParameters.API_URL));
+        map.put(SoosScaParameters.LOG_LEVEL, getParamValue(object, SoosScaParameters.LOG_LEVEL));
+        map.put(SoosScaParameters.VERBOSE, getParamValue(object, SoosScaParameters.VERBOSE));
+        map.put(SoosScaParameters.OUTPUT_FORMAT, getParamValue(object, SoosScaParameters.OUTPUT_FORMAT));
+        map.put(SoosScaParameters.NODE_PATH, getParamValue(object, SoosScaParameters.NODE_PATH));
 
         return map;
     }

@@ -7,6 +7,7 @@ import io.soos.commons.PluginConstants;
 import io.soos.commons.Utils;
 import io.soos.integration.Configuration;
 import io.soos.integration.Enums;
+import io.soos.integration.SoosScaParameters;
 import io.soos.integration.SoosScaWrapper;
 import org.jetbrains.annotations.NotNull;
 
@@ -96,12 +97,12 @@ public class SoosSCATask implements TaskType {
     private Map<String, String> getTaskParameters(TaskContext taskContext) {
         Map<String, String> map = new HashMap<>(taskContext.getConfigurationMap());
         String workingDirectoryPath = taskContext.getWorkingDirectory().getPath();
-        map.put("workingDirectory", workingDirectoryPath);
-        map.put("sourceCodePath", workingDirectoryPath);
-        map.put("integrationName", PluginConstants.INTEGRATION_NAME);
+        map.put(SoosScaParameters.WORKING_DIRECTORY, workingDirectoryPath);
+        map.put(SoosScaParameters.SOURCE_CODE_PATH, workingDirectoryPath);
+        map.put(SoosScaParameters.INTEGRATION_NAME, PluginConstants.INTEGRATION_NAME);
 
-        if (map.get("projectName") == null || map.get("projectName").isEmpty()) {
-            map.put("projectName", taskContext.getBuildContext().getPlanName());
+        if (map.get(SoosScaParameters.PROJECT_NAME) == null || map.get(SoosScaParameters.PROJECT_NAME).isEmpty()) {
+            map.put(SoosScaParameters.PROJECT_NAME, taskContext.getBuildContext().getPlanName());
         }
 
         return map;
@@ -118,8 +119,8 @@ public class SoosSCATask implements TaskType {
         if (clientId == null || apiKey == null) {
             throw new Exception("There was an issue retrieving your Client ID and API Key, make sure you have them set up on your global variables.");
         }
-        map.put("clientId", clientId.getValue());
-        map.put("apiKey", apiKey.getValue());
+        map.put(SoosScaParameters.CLIENT_ID, clientId.getValue());
+        map.put(SoosScaParameters.API_KEY, apiKey.getValue());
 
         return map;
     }
