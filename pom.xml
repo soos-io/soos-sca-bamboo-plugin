@@ -28,7 +28,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <soos-sca.version>2.0.0</soos-sca.version>
+        <soos-sca.version>2.0.1</soos-sca.version>
         <log4j.version>2.17.1</log4j.version>
     </properties>
 
