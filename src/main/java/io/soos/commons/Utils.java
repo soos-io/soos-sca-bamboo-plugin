@@ -9,8 +9,4 @@ public class Utils {
         return taskContext.getBuildContext().getVariableContext().getEffectiveVariables().get(variableName);
     }
 
-    public static String getOperatingSystem() {
-        return System.getProperty(PluginConstants.OS_NAME).toLowerCase();
-    }
-
 }
